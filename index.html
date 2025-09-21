@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahara - Your Wellness Companion</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Sahara</h2>
+            <p>Your confidential wellness space</p>
+        </div>
+        <div class="chat-box" id="chat-box">
+            <div class="message ai-message">
+                <p>Hello, I'm Sahara. I'm here to listen. How are you feeling today?</p>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Type your message here...">
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sendBtn = document.getElementById('send-btn');
+            const userInput = document.getElementById('user-input');
+            const chatBox = document.getElementById('chat-box');
+
+            sendBtn.addEventListener('click', sendMessage);
+            userInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            async function sendMessage() {
+                const messageText = userInput.value.trim();
+                if (messageText === '') return;
+
+                // Display user's message
+                appendMessage(messageText, 'user-message');
+                userInput.value = '';
+
+                // Show a typing indicator for the AI
+                appendMessage('...', 'ai-message', true);
+
+
+                try {
+                    // Send message to the backend
+                    const response = await fetch('http://127.0.0.1:5000/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message: messageText })
+                    });
+
+                    // Remove typing indicator
+                    const typingIndicator = document.querySelector('.typing-indicator');
+                    if (typingIndicator) {
+                        typingIndicator.remove();
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    const data = await response.json();
+
+                    // Display AI's response
+                    appendMessage(data.reply, 'ai-message');
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    appendMessage('I seem to be having trouble connecting. Please try again in a moment.', 'ai-message');
+                }
+            }
+
+            function appendMessage(text, className, isTyping = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', className);
+                if (isTyping) {
+                   messageDiv.classList.add('typing-indicator');
+                }
+
+                const p = document.createElement('p');
+                p.textContent = text;
+                messageDiv.appendChild(p);
+                chatBox.appendChild(messageDiv);
+
+                // Scroll to the latest message
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
